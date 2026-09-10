@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>ISOTEC Zeichentool</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header class="kopf">
+    <div class="marke"><span class="punkt"></span> ISOTEC Zeichentool</div>
+
+    <div class="gruppe">
+      <input type="file" id="datei-input" accept="application/pdf,image/*" multiple hidden />
+      <button class="btn" id="btn-oeffnen" title="PDF oder Bild öffnen">PDF öffnen</button>
+      <button class="btn" id="btn-leer" title="Neues leeres A4-Blatt">Leeres Blatt</button>
+      <button class="btn" id="btn-foto" title="Foto auf die aktuelle Seite setzen (oder Datei aufs Blatt ziehen, oder Strg+V)">Foto</button>
+    </div>
+
+    <div class="gruppe">
+      <button class="btn hand" id="btn-auswahl" title="Hand: Objekte greifen, verschieben, an den Punkten anpassen (V, Rechtsklick oder Esc)">✋ Hand</button>
+      <button class="btn ikon gefahr" id="btn-loeschen" title="Markiertes Objekt löschen (Entf)">🗑</button>
+      <span class="trenner"></span>
+      <button class="btn ikon" id="btn-undo" title="Rückgängig (Strg+Z)">↺</button>
+      <button class="btn ikon" id="btn-redo" title="Wiederholen (Strg+Y)">↻</button>
+    </div>
+
+    <div class="gruppe">
+      <button class="btn ikon" id="btn-zoom-minus" title="Verkleinern (Strg+Mausrad)">−</button>
+      <span class="zoom-wert" id="zoom-wert">100 %</span>
+      <button class="btn ikon" id="btn-zoom-plus" title="Vergrößern (Strg+Mausrad)">+</button>
+      <button class="btn" id="btn-seite" title="Ganze Seite anzeigen">Seite</button>
+      <button class="btn" id="btn-breite" title="Auf Fensterbreite">Breite</button>
+      <span class="trenner"></span>
+      <button class="btn primaer" id="btn-speichern" title="Als PDF speichern (Strg+S)">Als PDF speichern</button>
+    </div>
+  </header>
+
+  <main class="buehne">
+    <aside class="seiten-leiste">
+      <div class="leiste-titel">Seiten</div>
+      <div class="miniaturen" id="miniaturen"></div>
+    </aside>
+
+    <section class="ansicht" id="ansicht">
+      <div class="start" id="start">
+        <div class="start-karte">
+          <h1>Zeichnen und markieren im PDF</h1>
+          <p>PDF hierher ziehen, Fotos per Drag &amp; Drop oder Strg+V einfügen.</p>
+          <div class="start-knoepfe">
+            <button class="btn primaer gross" id="btn-oeffnen-2">PDF öffnen</button>
+            <button class="btn gross" id="btn-leer-2">Leeres Blatt A4</button>
+          </div>
+        </div>
+      </div>
+      <div class="seiten" id="seiten"></div>
+    </section>
+
+    <aside class="vorlagen-leiste" id="vorlagen-leiste">
+      <div class="reiter" id="reiter">
+        <button class="reiter-knopf aktiv" data-reiter="gewerke">Gewerke</button>
+        <button class="reiter-knopf" data-reiter="aufmass">Aufmaß</button>
+        <button class="reiter-knopf" data-reiter="grundriss">Grundriss</button>
+      </div>
+      <div class="vorlagen" id="vorlagen"></div>
+      <div class="einstellungen" id="einstellungen" hidden></div>
+    </aside>
+  </main>
+
+  <div class="status" id="status">Bereit</div>
+  <div class="ablage-hinweis"><span>Datei hier ablegen</span></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
