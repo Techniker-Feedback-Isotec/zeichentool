@@ -50,8 +50,32 @@ const el = {
 
 const melde = (text) => { el.status.textContent = text; };
 
-/** Eine Auswahl aus einem oder mehreren Objekten einer Seite. */
-const auswahlVon = (seite, items) => ({ seite, items, item: items.length === 1 ? items[0] : null });
+/**
+ * Eine Auswahl aus einem oder mehreren Objekten einer Seite. Gehoert ein Objekt
+ * zu einer Gruppe (Kennung gruppe), kommen alle Mitglieder mit.
+ */
+function auswahlVon(seite, items) {
+  const gruppen = new Set(items.map((i) => i.gruppe).filter(Boolean));
+  const alle = gruppen.size ? seite.items.filter((i) => items.includes(i) || gruppen.has(i.gruppe)) : items;
+  return { seite, items: alle, item: alle.length === 1 ? alle[0] : null };
+}
+
+/** Markierte Objekte zu einer Gruppe verbinden oder eine Gruppe wieder loesen. */
+function gruppiere() {
+  const a = state.auswahl;
+  if (!a || a.items.length < 2) return;
+  schnappschuss();
+  const istGruppe = a.items.every((i) => i.gruppe && i.gruppe === a.items[0].gruppe);
+  if (istGruppe) {
+    for (const i of a.items) delete i.gruppe;
+    melde('Gruppe gelöst. Die Objekte lassen sich wieder einzeln greifen.');
+  } else {
+    const kennung = 'g' + Date.now().toString(36);
+    for (const i of a.items) i.gruppe = kennung;
+    melde(`${a.items.length} Objekte gruppiert. Ein Griff auf eines davon nimmt alle mit.`);
+  }
+  zeichneAlles();
+}
 
 /* ----------------------------------------------------------- Einstellungen */
 
@@ -126,50 +150,51 @@ function probe(v) {
   }
 }
 
-/** Baut die Vorlagenleiste: je Gewerk eine Karte mit Farbmarke und den Vorlagen darunter. */
+/** Baut die Vorlagenleiste: je Gewerk eine Zeile mit Symbolknoepfen, Aufmass und Grundriss als Liste. */
 function baueVorlagen(reiter) {
   el.vorlagen.innerHTML = '';
   schliesseEinstellungen();
   const gruppen = { aufmass: [AUFMASS], grundriss: [GRUNDRISS] }[reiter] || GEWERKE;
+  const knopfFuer = (v, breit) => {
+    const knopf = document.createElement('button');
+    knopf.className = 'vorlage' + (breit ? ' breit' : '');
+    knopf.dataset.id = v.id;
+    knopf.title = `${v.gruppe}: ${v.name}. Doppelklick hält die Vorlage für mehrere Objekte fest.`;
+    knopf.innerHTML = probe(v) + (breit ? `<span>${v.name}</span>` : '');
+    knopf.onclick = () => waehleVorlage(v);
+    const festhalten = () => {
+      state.fest = true;
+      markiereVorlage();
+      melde(`${v.gruppe} – ${v.name} bleibt festgehalten. Esc oder Hand löst wieder.`);
+    };
+    knopf.ondblclick = festhalten;
+    let letzterTipp = 0;
+    knopf.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      const jetzt = performance.now();
+      if (jetzt - letzterTipp < 350 && state.vorlage && state.vorlage.id === v.id) festhalten();
+      letzterTipp = jetzt;
+    });
+    return knopf;
+  };
   for (const g of gruppen) {
-    const karte = document.createElement('div');
-    karte.className = 'karte' + (g.presets.every((p) => p.nurSymbol) ? ' zeile' : '');
     if (gruppen.length > 1) {
-      const kopf = document.createElement('div');
-      kopf.className = 'karte-kopf';
-      kopf.innerHTML = `<span class="fahne" style="background:${g.farbe}"></span><span>${g.name}</span>`;
-      karte.appendChild(kopf);
+      const zeile = document.createElement('div');
+      zeile.className = 'zeile';
+      zeile.innerHTML = `<span class="fahne" style="background:${g.farbe}"></span><span class="name" title="${g.name}">${g.kurz || g.name}</span>`;
+      const knoepfe = document.createElement('div');
+      knoepfe.className = 'knoepfe';
+      for (const p of g.presets) knoepfe.appendChild(knopfFuer(loeseAuf(g, p), false));
+      zeile.appendChild(knoepfe);
+      el.vorlagen.appendChild(zeile);
+    } else {
+      for (const p of g.presets) {
+        const zeile = document.createElement('div');
+        zeile.className = 'zeile liste';
+        zeile.appendChild(knopfFuer(loeseAuf(g, p), true));
+        el.vorlagen.appendChild(zeile);
+      }
     }
-    const reihe = document.createElement('div');
-    reihe.className = 'vorlagen-reihe';
-    for (const p of g.presets) {
-      const v = loeseAuf(g, p);
-      const knopf = document.createElement('button');
-      knopf.className = 'vorlage' + (v.nurSymbol ? ' symbol' : '');
-      knopf.dataset.id = v.id;
-      knopf.title = `${v.name}. Doppelklick hält die Vorlage für mehrere Objekte fest.`;
-      knopf.innerHTML = `${probe(v)}${v.nurSymbol ? '' : `<span>${v.name}</span>`}<span class="zahnrad${typeof state.einstellungen[v.id] === 'number' ? ' markiert' : ''}" title="${REGLER[v.einstellbar].name} anpassen">⚙</span>`;
-      knopf.onclick = (e) => {
-        if (e.target.classList.contains('zahnrad')) { oeffneEinstellungen(v, e.target); return; }
-        waehleVorlage(v);
-      };
-      const festhalten = () => {
-        state.fest = true;
-        markiereVorlage();
-        melde(`${v.gruppe} – ${v.name} bleibt festgehalten. Esc oder Hand löst wieder.`);
-      };
-      knopf.ondblclick = (e) => { if (!e.target.classList.contains('zahnrad')) festhalten(); };
-      let letzterTipp = 0;
-      knopf.addEventListener('pointerdown', (e) => {
-        if (e.pointerType !== 'touch' || e.target.classList.contains('zahnrad')) return;
-        const jetzt = performance.now();
-        if (jetzt - letzterTipp < 350 && state.vorlage && state.vorlage.id === v.id) festhalten();
-        letzterTipp = jetzt;
-      });
-      reihe.appendChild(knopf);
-    }
-    karte.appendChild(reihe);
-    el.vorlagen.appendChild(karte);
   }
   markiereVorlage();
 }
@@ -248,6 +273,17 @@ function markiereVorlage() {
   }
   $('btn-auswahl').classList.toggle('aktiv', state.tool === 'auswahl');
   $('btn-lasso').classList.toggle('aktiv', state.tool === 'lasso');
+  const z = $('btn-einstellung');
+  z.disabled = !state.vorlage;
+  z.classList.toggle('markiert', !!state.vorlage && typeof state.einstellungen[state.vorlage.id] === 'number');
+  z.title = state.vorlage
+    ? `${REGLER[state.vorlage.einstellbar].name} von „${state.vorlage.name}“ anpassen`
+    : 'Erst rechts eine Vorlage wählen, dann hier Strichdicke oder Schriftgröße anpassen';
+  const a = state.auswahl;
+  const mehrere = !!a && a.items.length > 1;
+  const gruppe = mehrere && a.items.every((i) => i.gruppe && i.gruppe === a.items[0].gruppe);
+  $('btn-gruppe').disabled = !mehrere;
+  $('btn-gruppe').textContent = gruppe ? '⧉ Gruppe lösen' : '⧉ Gruppe';
   el.seiten.classList.toggle('zeichnen', state.tool !== 'auswahl');
   $('zoom-wert').textContent = Math.round(state.zoom * 100) + ' %';
   $('btn-undo').disabled = !state.verlauf.length;
@@ -265,6 +301,7 @@ function oeffneEinstellungen(v, knopf) {
   schliesseEinstellungen();
   offeneEinstellung = { id: v.id, knopf, geschnappt: false };
   knopf.classList.add('aktiv');
+  knopf.classList.add('offen');
 
   const regler = REGLER[v.einstellbar];
   const standard = v.einstellbar === 'size' ? v.size : v.width;
@@ -287,7 +324,7 @@ function oeffneEinstellungen(v, knopf) {
     speichereEinstellungen();
     $('einst-wert').textContent = `${zeige(neu)} ${regler.einheit}`;
     regl.value = neu;
-    knopf.classList.toggle('markiert', !zuruecksetzen);
+    markiereVorlage();
     // Ein gerade markiertes Objekt dieser Vorlage zieht sofort mit
     const it = state.auswahl && state.auswahl.item;
     if (it && it.v === v.id) {
@@ -310,13 +347,13 @@ function oeffneEinstellungen(v, knopf) {
 
 function schliesseEinstellungen() {
   if (!offeneEinstellung) return;
-  offeneEinstellung.knopf.classList.remove('aktiv');
+  offeneEinstellung.knopf.classList.remove('aktiv', 'offen');
   offeneEinstellung = null;
   el.einstellungen.hidden = true;
 }
 
 document.addEventListener('pointerdown', (e) => {
-  if (offeneEinstellung && !el.einstellungen.contains(e.target) && !e.target.classList.contains('zahnrad')) schliesseEinstellungen();
+  if (offeneEinstellung && !el.einstellungen.contains(e.target) && e.target.id !== 'btn-einstellung') schliesseEinstellungen();
 });
 
 /* -------------------------------------------------------------- Dokument */
@@ -530,10 +567,12 @@ function malAuswahl(ctx, a) {
     const g = gruppenBox(a.items, ctx);
     ctx.setLineDash([]);
     ctx.strokeStyle = '#D51317';
-    ctx.lineWidth = 1.4 / state.zoom;
+    ctx.lineWidth = 1.6 / state.zoom;
+    ctx.fillStyle = 'rgba(213, 19, 23, .04)';
+    ctx.fillRect(g.x, g.y, g.w, g.h);
     ctx.strokeRect(g.x, g.y, g.w, g.h);
     ctx.fillStyle = '#fff';
-    const q = 8 / state.zoom;
+    const q = (touchGeraet ? 14 : 9) / state.zoom;
     for (const [x, y] of ecken(g)) { ctx.fillRect(x - q / 2, y - q / 2, q, q); ctx.strokeRect(x - q / 2, y - q / 2, q, q); }
     ctx.restore();
     return;
@@ -1305,6 +1344,8 @@ $('btn-foto').onclick = fotoDialog;
 $('datei-input').onchange = (e) => { nimmDateien(e.target.files); e.target.value = ''; };
 $('btn-auswahl').onclick = waehleAuswahl;
 $('btn-lasso').onclick = waehleLasso;
+$('btn-gruppe').onclick = gruppiere;
+$('btn-einstellung').onclick = () => { if (state.vorlage) oeffneEinstellungen(state.vorlage, $('btn-einstellung')); };
 $('btn-zuklappen').onclick = () => klappeLeiste(true);
 $('btn-aufklappen').onclick = () => klappeLeiste(false);
 $('btn-fixieren').onclick = () => {
@@ -1375,6 +1416,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Delete' || e.key === 'Backspace') { loescheAuswahl(); return; }
   if (!e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'v') waehleAuswahl();
   if (!e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'l') waehleLasso();
+  if (!e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'g') gruppiere();
 });
 
 // Strg + Mausrad zoomt

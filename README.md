@@ -22,22 +22,25 @@ auf die Hand und hat das neue Objekt markiert.
 
 ### Kopfzeile
 
-PDF öffnen, Leeres Blatt, Foto | Hand, Löschen, Lasso, Rückgängig,
-Wiederholen | Zoom, Seite (ganze Seite), Breite | Als PDF speichern.
+PDF öffnen, Blatt, Foto | Hand, Löschen, Lasso, Gruppe, Rückgängig,
+Wiederholen | Zoom, Seite (ganze Seite), Breite | Speichern. Bewusst
+kompakt, damit sie auf dem iPad in eine Zeile passt.
 
 ### Vorlagenleiste
 
-Rechts, mit drei Reitern. Über » lässt sie sich zu einem schmalen Streifen
-einklappen, « klappt sie wieder auf. Die Stecknadel fixiert sie: fixiert
-bleibt sie nach der Wahl einer Vorlage offen, sonst klappt sie zu (Standard
-auf Touch-Geräten), damit das Blatt Platz hat. Die Einstellung bleibt im
-Browser gespeichert.
+Rechts. Eigene Kopfzeile mit Zahnrad (Strichdicke oder Schriftgröße der
+gerade gewählten Vorlage), Stecknadel und Einklappen (»). Eingeklappt bleibt
+ein schmaler Streifen, « klappt wieder auf. Fixiert bleibt die Leiste nach
+der Wahl einer Vorlage offen, sonst klappt sie zu (Standard auf
+Touch-Geräten), damit das Blatt Platz hat. Darunter die drei Reiter.
 
 ### Reiter Gewerke
 
-Je Gewerk eine Zeile mit Farbmarke und Namen, rechts daneben die Vorlagen der
-Legende nur als Symbol (`analysetermin-fotodoku/src/data/legende.ts`, gleiche
-Farben, Reihenfolge und Bezeichnungen):
+Eine ruhige Liste: je Gewerk eine Zeile mit Farbpunkt und Kurznamen (wie das
+Kurzfeld der Legende, voller Name als Tooltip), rechts in einer festen Spalte
+die Vorlagen als kleine Symbolknöpfe, gleich ausgerichtet. Quelle bleibt
+`analysetermin-fotodoku/src/data/legende.ts` mit gleichen Farben und
+gleicher Reihenfolge:
 
 - *Strich* (Grundriss und Querschnitt): gerade Linie, Stärke 3, eckige Enden.
   Anfang anklicken, Ende anklicken (oder ziehen). Umschalt erzwingt waagerecht
@@ -66,13 +69,13 @@ Deckende Flächen zum Zeichnen eines Grundrisses, in Arbeitsreihenfolge:
 Grundfläche (dunkelgraues Polygon, Stärke 8), darauf Räume (weißes Polygon,
 Rand 0,1) und Fenster/Türen (weißes Rechteck, Rand 0,1).
 
-### Zahnrad je Vorlage
+### Zahnrad
 
-Erscheint beim Überfahren und an der aktiven Vorlage. Öffnet ein kleines
-Fenster mit genau einer Einstellung: Strichdicke, beim Text die Schriftgröße.
-Sonst ist nichts verstellbar. Der Wert bleibt im Browser gespeichert und gilt
-für neue Objekte; ein gerade markiertes Objekt derselben Vorlage zieht sofort
-mit.
+In der Kopfzeile der Leiste, aktiv sobald eine Vorlage gewählt ist. Öffnet
+ein kleines Fenster mit genau einer Einstellung: Strichdicke, beim Text die
+Schriftgröße. Sonst ist nichts verstellbar. Der Wert bleibt im Browser
+gespeichert und gilt für neue Objekte; ein gerade markiertes Objekt derselben
+Vorlage zieht sofort mit. Rotes Zahnrad heißt: Vorlage weicht vom Standard ab.
 
 ### Vorlage festhalten
 
@@ -80,12 +83,16 @@ Doppelklick auf eine Vorlage hält sie fest (📌): dann bleibt sie nach jedem
 Objekt aktiv, praktisch für viele Striche hintereinander. Esc oder Hand löst
 wieder.
 
-### Lasso
+### Lasso und Gruppe
 
-Bereich mit gedrückter Maustaste oder dem Finger einkreisen. Alle Objekte,
-deren Mittelpunkt im Lasso liegt, sind danach gemeinsam markiert: greifen und
-verschieben, an den vier Ecken der gemeinsamen Box skalieren, Entf löscht
-alle. Danach ist die Hand wieder aktiv.
+Lasso: Bereich mit gedrückter Maustaste oder dem Finger einkreisen. Alle
+Objekte, deren Mittelpunkt im Lasso liegt, sind danach gemeinsam markiert und
+von einem roten Rechteck mit vier Eckgriffen umgeben: in das Rechteck greifen
+verschiebt alles, ein Eckgriff skaliert alles, Entf löscht alles.
+
+Gruppe (`G`): verbindet die markierten Objekte dauerhaft. Ein Griff auf ein
+Mitglied nimmt danach immer die ganze Gruppe. Bei markierter Gruppe steht auf
+dem Knopf „Gruppe lösen“. Gruppen werden mit den Markups im PDF gespeichert.
 
 ### Hand
 
@@ -127,7 +134,7 @@ sind nicht vorgesehen.
 
 ## Tastatur
 
-`V` Hand, `L` Lasso, `Esc` bricht Linie oder Polygon ab, löst eine festgehaltene
+`V` Hand, `L` Lasso, `G` Gruppe, `Esc` bricht Linie oder Polygon ab, löst eine festgehaltene
 Vorlage, wechselt zur Hand oder hebt die Auswahl auf, `Enter` schließt ein
 Polygon oder öffnet den Text des markierten Objekts, `Entf` löscht,
 `Strg+Z` / `Strg+Y` Rückgängig und Wiederholen, `Strg+S` speichern,

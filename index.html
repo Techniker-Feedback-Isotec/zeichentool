@@ -9,12 +9,12 @@
 </head>
 <body>
   <header class="kopf">
-    <div class="marke"><span class="punkt"></span> ISOTEC Zeichentool</div>
+    <div class="marke"><span class="punkt"></span><span class="marke-text">ISOTEC Zeichentool</span></div>
 
     <div class="gruppe">
       <input type="file" id="datei-input" accept="application/pdf,image/*" multiple hidden />
       <button class="btn" id="btn-oeffnen" title="PDF oder Bild öffnen">PDF öffnen</button>
-      <button class="btn" id="btn-leer" title="Neues leeres A4-Blatt">Leeres Blatt</button>
+      <button class="btn" id="btn-leer" title="Neues leeres A4-Blatt">Blatt</button>
       <button class="btn" id="btn-foto" title="Foto auf die aktuelle Seite setzen (oder Datei aufs Blatt ziehen, oder Strg+V)">Foto</button>
     </div>
 
@@ -22,6 +22,7 @@
       <button class="btn hand" id="btn-auswahl" title="Hand: Objekte greifen, verschieben, an den Punkten anpassen (V, Rechtsklick oder Esc)">✋ Hand</button>
       <button class="btn ikon gefahr" id="btn-loeschen" title="Markierte Objekte löschen (Entf)">🗑</button>
       <button class="btn" id="btn-lasso" title="Lasso: Bereich einkreisen, alle Objekte darin gemeinsam verschieben oder skalieren (L)">⭕ Lasso</button>
+      <button class="btn" id="btn-gruppe" title="Markierte Objekte zu einer Gruppe verbinden, die sich gemeinsam greifen lässt (G)" disabled>⧉ Gruppe</button>
       <span class="trenner"></span>
       <button class="btn ikon" id="btn-undo" title="Rückgängig (Strg+Z)">↺</button>
       <button class="btn ikon" id="btn-redo" title="Wiederholen (Strg+Y)">↻</button>
@@ -34,7 +35,7 @@
       <button class="btn" id="btn-seite" title="Ganze Seite anzeigen">Seite</button>
       <button class="btn" id="btn-breite" title="Auf Fensterbreite">Breite</button>
       <span class="trenner"></span>
-      <button class="btn primaer" id="btn-speichern" title="Als PDF speichern (Strg+S)">Als PDF speichern</button>
+      <button class="btn primaer" id="btn-speichern" title="Als PDF speichern (Strg+S)">Speichern</button>
     </div>
   </header>
 
@@ -59,12 +60,16 @@
     </section>
 
     <aside class="vorlagen-leiste" id="vorlagen-leiste">
+      <div class="leiste-kopf">
+        <span class="leiste-name">Vorlagen</span>
+        <button class="leiste-knopf" id="btn-einstellung" title="Strichdicke oder Schriftgröße der gewählten Vorlage anpassen">⚙</button>
+        <button class="leiste-knopf" id="btn-fixieren" title="Leiste offen halten. Ohne Fixierung klappt sie nach der Wahl einer Vorlage zu.">📌</button>
+        <button class="leiste-knopf" id="btn-zuklappen" title="Leiste einklappen">»</button>
+      </div>
       <div class="reiter" id="reiter">
         <button class="reiter-knopf aktiv" data-reiter="gewerke">Gewerke</button>
         <button class="reiter-knopf" data-reiter="aufmass">Aufmaß</button>
         <button class="reiter-knopf" data-reiter="grundriss">Grundriss</button>
-        <button class="leiste-knopf" id="btn-fixieren" title="Leiste offen halten. Ohne Fixierung klappt sie nach der Wahl einer Vorlage zu.">📌</button>
-        <button class="leiste-knopf" id="btn-zuklappen" title="Leiste einklappen">»</button>
       </div>
       <div class="vorlagen" id="vorlagen"></div>
       <button class="leiste-auf" id="btn-aufklappen" title="Vorlagen einblenden">« Vorlagen</button>

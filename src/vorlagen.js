@@ -20,22 +20,24 @@ const balken = { schluessel: 'balken', name: 'Strich', tool: 'linie', width: 3, 
 // frei: true schaltet die Fanghilfen ab. Die Gewerkeflaeche muss punktgenau
 // dort liegen, wo geklickt wird (Yann, 10.09.2026); Aufmass und Grundriss fangen weiter.
 const flaeche = { schluessel: 'flaeche', name: 'Fläche', tool: 'polygon', width: 1, fill: 'auto', fillOpacity: FLAECHEN_DECKKRAFT, frei: true, nurSymbol: true };
-const kreuz = { schluessel: 'kreuz', name: 'Wanddurchbruch', tool: 'kreuz', width: 2.5 };
+const kreuz = { schluessel: 'kreuz', name: 'Wanddurchbruch', tool: 'kreuz', width: 2.5, nurSymbol: true };
 // Drawboard-Callout: Pfeil auf einen Punkt, daran ein weisses Textfeld mit
 // duenner schwarzer Umrandung. Der Text bricht an der Feldbreite um.
-const hinweis = { schluessel: 'hinweis', name: 'Textfeld mit Pfeil', tool: 'callout', color: '#000000', fill: '#FFFFFF', width: 0.7, size: 11, einstellbar: 'size' };
+const hinweis = { schluessel: 'hinweis', name: 'Textfeld mit Pfeil', tool: 'callout', color: '#000000', fill: '#FFFFFF', width: 0.7, size: 11, einstellbar: 'size', nurSymbol: true };
 
+// "kurz" ist der Anzeigename in der Leiste (wie das kurz-Feld der Legende),
+// der volle Name bleibt als Tooltip erhalten.
 export const GEWERKE = [
   { id: 'innenabdichtung', name: 'Innenabdichtung', farbe: '#2323ff', presets: [balken, flaeche] },
   { id: 'sanierputz', name: 'Sanierputz', farbe: '#e8801c', presets: [balken, flaeche] },
   { id: 'aussenabdichtung', name: 'Außenabdichtung', farbe: '#0a7d2e', presets: [balken, flaeche] },
-  { id: 'balkon-pmma', name: 'Balkon (PMMA)', farbe: '#6b0d7b', presets: [balken, flaeche] },
+  { id: 'balkon-pmma', name: 'Balkon (PMMA)', kurz: 'Balkon PMMA', farbe: '#6b0d7b', presets: [balken, flaeche] },
   { id: 'klimaplatte', name: 'Klimaplatte', farbe: '#efe000', presets: [balken, flaeche] },
-  { id: 'balkon-kombiflex', name: 'Balkon (Kombiflex & Steinteppich)', farbe: '#3366ff', presets: [balken, flaeche] },
+  { id: 'balkon-kombiflex', name: 'Balkon (Kombiflex & Steinteppich)', kurz: 'Balkon Kombiflex', farbe: '#3366ff', presets: [balken, flaeche] },
   { id: 'bodenabdichtung', name: 'Bodenabdichtung', farbe: '#5b5bd6', presets: [flaeche] },
-  { id: 'rissinjektion', name: 'Rissinjektion & Flexband', farbe: '#ff2d95', presets: [balken, flaeche] },
-  { id: 'horizontalsperre', name: 'Horizontalsperre (Injektionscreme & Horizontalsperre)', farbe: '#ff0000', presets: [balken] },
-  { id: 'kellerbodensanierung', name: 'Kellerbodensanierung', farbe: '#00d5d5', presets: [flaeche] },
+  { id: 'rissinjektion', name: 'Rissinjektion & Flexband', kurz: 'Rissinjektion', farbe: '#ff2d95', presets: [balken, flaeche] },
+  { id: 'horizontalsperre', name: 'Horizontalsperre (Injektionscreme & Horizontalsperre)', kurz: 'Horizontalsperre', farbe: '#ff0000', presets: [balken] },
+  { id: 'kellerbodensanierung', name: 'Kellerbodensanierung', kurz: 'Kellerboden', farbe: '#00d5d5', presets: [flaeche] },
   { id: 'sonstiges', name: 'Sonstiges', farbe: '#ff3b3b', presets: [kreuz, hinweis] },
 ];
 
