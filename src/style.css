@@ -163,14 +163,19 @@ body { display: flex; flex-direction: column; }
 }
 .leiste-name { flex: 1; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--gedaempft); }
 .leiste-knopf {
-  width: 34px; height: 100%; flex: none;
-  border: none; border-left: 1px solid var(--linie);
-  background: none; color: var(--gedaempft);
-  font: inherit; font-size: 14px; cursor: pointer;
+  width: 30px; height: 100%; flex: none;
+  border: none; background: none;
+  color: #b4aca7;
+  font: inherit; font-size: 12px; line-height: 1;
+  opacity: .75;
+  cursor: pointer;
 }
-.leiste-knopf:hover { background: var(--hellgrau); color: var(--text); }
-.leiste-knopf.aktiv, .leiste-knopf.markiert { color: var(--rot); }
-.leiste-knopf[disabled] { opacity: .35; cursor: default; }
+.leiste-knopf svg { width: 15px; height: 15px; display: block; margin: 0 auto; }
+.leiste-knopf:hover { color: var(--braun); opacity: 1; }
+/* Gedrueckt heisst nur dunkler, nicht bunt: die Leiste soll ruhig bleiben */
+.leiste-knopf.aktiv { color: var(--braun); opacity: 1; }
+.leiste-knopf.markiert { color: #b5807c; opacity: 1; }
+.leiste-knopf[disabled] { opacity: .3; cursor: default; }
 /* Eingeklappte Leiste: nur ein schmaler Streifen zum Aufklappen */
 .leiste-auf {
   display: none;
@@ -289,7 +294,7 @@ body.ablage .ablage-hinweis { display: grid; }
   .btn.ikon { width: 34px; font-size: 16px; }
   .kopf { padding: 4px 8px; gap: 4px 10px; }
   .leiste-kopf { height: 40px; }
-  .leiste-knopf { width: 42px; font-size: 17px; }
+  .leiste-knopf { width: 38px; font-size: 14px; }
   .reiter-knopf { height: 40px; font-size: 13px; }
   .zeile { min-height: 42px; }
   .zeile .name { font-size: 13px; }

@@ -22,14 +22,20 @@ auf die Hand und hat das neue Objekt markiert.
 
 ### Kopfzeile
 
-PDF öffnen, Blatt, Foto | Hand, Löschen, Lasso, Gruppe, Rückgängig,
-Wiederholen | Zoom, Seite (ganze Seite), Breite | Speichern. Bewusst
-kompakt, damit sie auf dem iPad in eine Zeile passt.
+PDF öffnen, + Blatt, + Foto | Hand, Löschen, Lasso, Gruppe, Rückgängig,
+Wiederholen | Zoom, Seite (ganze Seite) | Speichern. Bewusst kompakt, damit
+sie auf dem iPad in eine Zeile passt.
+
+Nichts wird versehentlich überschrieben: **+ Blatt** hängt immer ein
+weiteres leeres A4-Blatt hinten an, **+ Foto** setzt genau ein Foto in das
+bestehende Dokument. Nur „PDF öffnen“ ersetzt das Dokument, und das fragt
+vorher nach, sobald Markierungen vorhanden sind.
 
 ### Vorlagenleiste
 
-Rechts. Eigene Kopfzeile mit Zahnrad (Strichdicke oder Schriftgröße der
-gerade gewählten Vorlage), Stecknadel und Einklappen (»). Eingeklappt bleibt
+Rechts. Eigene Kopfzeile mit drei zurückhaltenden Strichsymbolen: Zahnrad
+(Strichdicke oder Schriftgröße der gerade gewählten Vorlage), Stecknadel und
+Einklappen. Eingeklappt bleibt
 ein schmaler Streifen, « klappt wieder auf. Fixiert bleibt die Leiste nach
 der Wahl einer Vorlage offen, sonst klappt sie zu (Standard auf
 Touch-Geräten), damit das Blatt Platz hat. Darunter die drei Reiter.
@@ -75,7 +81,8 @@ In der Kopfzeile der Leiste, aktiv sobald eine Vorlage gewählt ist. Öffnet
 ein kleines Fenster mit genau einer Einstellung: Strichdicke, beim Text die
 Schriftgröße. Sonst ist nichts verstellbar. Der Wert bleibt im Browser
 gespeichert und gilt für neue Objekte; ein gerade markiertes Objekt derselben
-Vorlage zieht sofort mit. Rotes Zahnrad heißt: Vorlage weicht vom Standard ab.
+Vorlage zieht sofort mit. Ein eingefärbtes Zahnrad heißt: Vorlage weicht vom
+Standard ab.
 
 ### Vorlage festhalten
 

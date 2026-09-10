@@ -401,15 +401,37 @@ async function ladePdf(bytes, name) {
   passeSeiteAn();
 }
 
+const leeresBlatt = (nr) => ({ nr, pdfSeite: null, breite: A4.breite, hoehe: A4.hoehe, items: [], hilfen: [] });
+
+/** Ob ein neues Dokument das bestehende ersetzen darf: nur wenn nichts gezeichnet ist oder Yann zustimmt. */
+function darfErsetzen() {
+  const gezeichnet = state.seiten.some((s) => s.items.length);
+  return !gezeichnet || confirm('Das geöffnete Dokument enthält Markierungen. Sollen sie verworfen und das neue Dokument geöffnet werden?');
+}
+
 function leeresDokument() {
   state.origBytes = null;
   state.dateiname = 'Zeichnung.pdf';
-  state.seiten = [{ nr: 1, pdfSeite: null, breite: A4.breite, hoehe: A4.hoehe, items: [], hilfen: [] }];
+  state.seiten = [leeresBlatt(1)];
   state.bilder = {};
   state.auswahl = null;
   state.verlauf = []; state.zukunft = [];
   baueSeiten();
   passeSeiteAn();
+}
+
+/**
+ * Haengt ein weiteres leeres Blatt hinten an. Das bestehende Dokument bleibt
+ * unangetastet (Yann, 10.09.2026: es darf nie etwas ueberschrieben werden).
+ */
+async function blattAnhaengen() {
+  if (!state.seiten.length) { leeresDokument(); melde('Leeres A4-Blatt angelegt.'); return; }
+  state.seiten.push(leeresBlatt(state.seiten.length + 1));
+  state.aktiveSeite = state.seiten.length - 1;
+  await baueSeiten();
+  markiereAktiveMini();
+  passeSeiteAn();
+  melde(`Blatt ${state.seiten.length} angehängt. Das bestehende Dokument bleibt erhalten.`);
 }
 
 async function baueSeiten() {
@@ -1209,19 +1231,16 @@ function ladeBild(id, src) {
   return bild;
 }
 
+/** Ein Foto in das bestehende Dokument setzen. Es wird nie etwas ersetzt. */
 function fotoDialog() {
   const inp = document.createElement('input');
   inp.type = 'file';
   inp.accept = 'image/*';
-  inp.multiple = true;
   inp.onchange = () => {
+    const datei = inp.files && inp.files[0];
+    if (!datei) return;
     if (!state.seiten.length) leeresDokument();
-    const ziel = state.seiten[state.aktiveSeite];
-    let versatz = 0;
-    for (const f of inp.files) {
-      setzeFoto(f, ziel, versatz ? { x: ziel.breite / 2 + versatz, y: ziel.hoehe / 2 + versatz } : null);
-      versatz += 18;
-    }
+    setzeFoto(datei, state.seiten[state.aktiveSeite], null);
   };
   inp.click();
 }
@@ -1272,11 +1291,6 @@ function setzeZoom(z) {
   rendereAlleSeiten();
 }
 
-function passeBreiteAn() {
-  if (!state.seiten.length) return;
-  setzeZoom((el.ansicht.clientWidth - 48) / state.seiten[0].breite);
-}
-
 /** Zeigt genau eine ganze Seite. */
 function passeSeiteAn() {
   if (!state.seiten.length) return;
@@ -1304,9 +1318,11 @@ function loescheAuswahl() {
 async function nimmDateien(dateien, ablage) {
   for (const f of dateien) {
     if (f.type === 'application/pdf') {
+      if (!darfErsetzen()) { melde('Öffnen abgebrochen, das bestehende Dokument bleibt.'); return; }
       await ladePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       melde(`${f.name} geöffnet – ${state.seiten.length} Seite(n).`);
     } else if (f.type.startsWith('image/')) {
+      // Bilder kommen immer hinzu, sie ersetzen nie etwas
       if (!state.seiten.length) leeresDokument();
       const ziel = ablage || { seite: state.seiten[state.aktiveSeite], pos: null };
       setzeFoto(f, ziel.seite, ziel.pos);
@@ -1339,7 +1355,8 @@ for (const k of $('reiter').querySelectorAll('.reiter-knopf')) {
 }
 
 $('btn-oeffnen').onclick = $('btn-oeffnen-2').onclick = () => $('datei-input').click();
-$('btn-leer').onclick = $('btn-leer-2').onclick = () => { leeresDokument(); melde('Leeres A4-Blatt angelegt.'); };
+$('btn-leer').onclick = blattAnhaengen;
+$('btn-leer-2').onclick = () => { leeresDokument(); melde('Leeres A4-Blatt angelegt.'); };
 $('btn-foto').onclick = fotoDialog;
 $('datei-input').onchange = (e) => { nimmDateien(e.target.files); e.target.value = ''; };
 $('btn-auswahl').onclick = waehleAuswahl;
@@ -1360,7 +1377,6 @@ $('btn-undo').onclick = () => stelleWieder(state.verlauf, state.zukunft);
 $('btn-redo').onclick = () => stelleWieder(state.zukunft, state.verlauf);
 $('btn-zoom-plus').onclick = () => setzeZoom(state.zoom * 1.2);
 $('btn-zoom-minus').onclick = () => setzeZoom(state.zoom / 1.2);
-$('btn-breite').onclick = passeBreiteAn;
 $('btn-seite').onclick = passeSeiteAn;
 $('btn-speichern').onclick = async () => {
   if (!state.seiten.length) return;
