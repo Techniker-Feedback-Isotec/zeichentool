@@ -16,10 +16,10 @@ const FLAECHEN_DECKKRAFT = 0.25;
 // Formen der Legende. 'auto' heisst: Fuellung in der Gewerkefarbe.
 // Strich = Grundriss und Querschnitt, Flaeche = Wand- und Balkonflaechen
 // (Yann, 10.09.2026: kurze Namen, Strich 3, Polygonrand 1).
-const balken = { schluessel: 'balken', name: 'Strich', tool: 'linie', width: 3, cap: 'square' };
+const balken = { schluessel: 'balken', name: 'Strich', tool: 'linie', width: 3, cap: 'square', nurSymbol: true };
 // frei: true schaltet die Fanghilfen ab. Die Gewerkeflaeche muss punktgenau
 // dort liegen, wo geklickt wird (Yann, 10.09.2026); Aufmass und Grundriss fangen weiter.
-const flaeche = { schluessel: 'flaeche', name: 'Fläche', tool: 'polygon', width: 1, fill: 'auto', fillOpacity: FLAECHEN_DECKKRAFT, frei: true };
+const flaeche = { schluessel: 'flaeche', name: 'Fläche', tool: 'polygon', width: 1, fill: 'auto', fillOpacity: FLAECHEN_DECKKRAFT, frei: true, nurSymbol: true };
 const kreuz = { schluessel: 'kreuz', name: 'Wanddurchbruch', tool: 'kreuz', width: 2.5 };
 // Drawboard-Callout: Pfeil auf einen Punkt, daran ein weisses Textfeld mit
 // duenner schwarzer Umrandung. Der Text bricht an der Feldbreite um.

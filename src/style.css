@@ -84,6 +84,7 @@ body { display: flex; flex-direction: column; }
   display: grid;
   grid-template-columns: 140px 1fr 300px;
 }
+.buehne.leiste-zu { grid-template-columns: 140px 1fr 44px; }
 .seiten-leiste, .vorlagen-leiste {
   background: #fff;
   display: flex;
@@ -154,7 +155,27 @@ body { display: flex; flex-direction: column; }
 .start-knoepfe { display: flex; gap: 10px; justify-content: center; }
 
 /* ---------- Vorlagen ---------- */
-.reiter { display: flex; border-bottom: 1px solid var(--linie); }
+.reiter { display: flex; align-items: stretch; border-bottom: 1px solid var(--linie); }
+.leiste-knopf {
+  width: 34px; flex: none;
+  border: none; border-left: 1px solid var(--linie);
+  background: none; color: var(--gedaempft);
+  font: inherit; font-size: 14px; cursor: pointer;
+}
+.leiste-knopf:hover { background: var(--hellgrau); color: var(--text); }
+.leiste-knopf.aktiv { color: var(--rot); }
+/* Eingeklappte Leiste: nur ein schmaler Streifen zum Aufklappen */
+.leiste-auf {
+  display: none;
+  flex: 1;
+  border: none; background: none;
+  color: var(--braun); font: inherit; font-weight: 600;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  cursor: pointer; padding: 14px 0;
+}
+.leiste-auf:hover { background: var(--hellgrau); }
+.vorlagen-leiste.zu .reiter, .vorlagen-leiste.zu .vorlagen, .vorlagen-leiste.zu .einstellungen { display: none; }
+.vorlagen-leiste.zu .leiste-auf { display: block; }
 .reiter-knopf {
   flex: 1;
   height: 38px;
@@ -174,6 +195,9 @@ body { display: flex; flex-direction: column; }
 .vorlagen { overflow-y: auto; flex: 1; }
 /* Kompakt genug, dass alle elf Gewerke ohne Scrollen auf einen normalen Bildschirm passen */
 .karte { padding: 6px 12px 7px; border-bottom: 1px solid var(--linie); }
+/* Gewerke mit reinen Symbolvorlagen stehen in einer Zeile: Name links, Symbole rechts */
+.karte.zeile { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 12px; }
+.karte.zeile .karte-kopf { flex: 1; margin: 0; }
 .karte-kopf { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-weight: 600; font-size: 12px; line-height: 1.2; }
 .karte-kopf .fahne { width: 11px; height: 11px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,.12); }
 .vorlagen-reihe { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -196,6 +220,8 @@ body { display: flex; flex-direction: column; }
 .vorlage.fest .zahnrad { color: var(--rot); }
 .vorlage.fest .zahnrad::before { content: '📌 '; font-size: 10px; }
 .vorlage .probe { width: 20px; height: 13px; flex: none; }
+.vorlage.symbol { padding: 0 5px 0 6px; gap: 2px; }
+.vorlage.symbol .probe { width: 26px; height: 16px; }
 /* Das Zahnrad behaelt seinen Platz immer, sonst springt der Knopf beim Ueberfahren
    in der Breite und die Zeile bricht um (Flackern bei den unteren Vorlagen). */
 .vorlage .zahnrad {
@@ -266,6 +292,9 @@ body.ablage .ablage-hinweis { display: grid; }
   .karte-kopf { font-size: 13px; margin-bottom: 6px; }
   .vorlage { height: 36px; padding: 0 10px 0 8px; font-size: 13px; gap: 8px; }
   .vorlage .probe { width: 24px; height: 15px; }
+  .vorlage.symbol .probe { width: 30px; height: 18px; }
+  .karte.zeile { padding: 3px 8px 3px 12px; }
+  .leiste-knopf { width: 44px; font-size: 17px; }
   .vorlage .zahnrad { font-size: 17px; }
   .einstellungen { width: 290px; padding: 14px 16px; }
   .einstellungen input[type=range] { height: 34px; }

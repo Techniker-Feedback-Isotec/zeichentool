@@ -43,7 +43,7 @@ function pfadZiehen(ctx, pts) {
   ctx.closePath();
 }
 
-function inPolygon(px, py, pts) {
+export function inPolygon(px, py, pts) {
   let drin = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
     const [xi, yi] = pts[i], [xj, yj] = pts[j];

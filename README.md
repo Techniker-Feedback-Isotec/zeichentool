@@ -22,14 +22,22 @@ auf die Hand und hat das neue Objekt markiert.
 
 ### Kopfzeile
 
-PDF öffnen, Leeres Blatt, Foto | Hand, Löschen, Rückgängig, Wiederholen |
-Zoom, Seite (ganze Seite), Breite | Als PDF speichern.
+PDF öffnen, Leeres Blatt, Foto | Hand, Löschen, Lasso, Rückgängig,
+Wiederholen | Zoom, Seite (ganze Seite), Breite | Als PDF speichern.
+
+### Vorlagenleiste
+
+Rechts, mit drei Reitern. Über » lässt sie sich zu einem schmalen Streifen
+einklappen, « klappt sie wieder auf. Die Stecknadel fixiert sie: fixiert
+bleibt sie nach der Wahl einer Vorlage offen, sonst klappt sie zu (Standard
+auf Touch-Geräten), damit das Blatt Platz hat. Die Einstellung bleibt im
+Browser gespeichert.
 
 ### Reiter Gewerke
 
-Je Gewerk eine Karte mit Farbmarke, darunter die Vorlagen der Legende
-(`analysetermin-fotodoku/src/data/legende.ts`, gleiche Farben, Reihenfolge und
-Bezeichnungen):
+Je Gewerk eine Zeile mit Farbmarke und Namen, rechts daneben die Vorlagen der
+Legende nur als Symbol (`analysetermin-fotodoku/src/data/legende.ts`, gleiche
+Farben, Reihenfolge und Bezeichnungen):
 
 - *Strich* (Grundriss und Querschnitt): gerade Linie, Stärke 3, eckige Enden.
   Anfang anklicken, Ende anklicken (oder ziehen). Umschalt erzwingt waagerecht
@@ -72,6 +80,13 @@ Doppelklick auf eine Vorlage hält sie fest (📌): dann bleibt sie nach jedem
 Objekt aktiv, praktisch für viele Striche hintereinander. Esc oder Hand löst
 wieder.
 
+### Lasso
+
+Bereich mit gedrückter Maustaste oder dem Finger einkreisen. Alle Objekte,
+deren Mittelpunkt im Lasso liegt, sind danach gemeinsam markiert: greifen und
+verschieben, an den vier Ecken der gemeinsamen Box skalieren, Entf löscht
+alle. Danach ist die Hand wieder aktiv.
+
 ### Hand
 
 Objekte anklicken und verschieben, Entf löscht. Polygone haben an jedem
@@ -112,7 +127,7 @@ sind nicht vorgesehen.
 
 ## Tastatur
 
-`V` Hand, `Esc` bricht Linie oder Polygon ab, löst eine festgehaltene
+`V` Hand, `L` Lasso, `Esc` bricht Linie oder Polygon ab, löst eine festgehaltene
 Vorlage, wechselt zur Hand oder hebt die Auswahl auf, `Enter` schließt ein
 Polygon oder öffnet den Text des markierten Objekts, `Entf` löscht,
 `Strg+Z` / `Strg+Y` Rückgängig und Wiederholen, `Strg+S` speichern,

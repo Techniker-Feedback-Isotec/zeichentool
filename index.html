@@ -20,7 +20,8 @@
 
     <div class="gruppe">
       <button class="btn hand" id="btn-auswahl" title="Hand: Objekte greifen, verschieben, an den Punkten anpassen (V, Rechtsklick oder Esc)">✋ Hand</button>
-      <button class="btn ikon gefahr" id="btn-loeschen" title="Markiertes Objekt löschen (Entf)">🗑</button>
+      <button class="btn ikon gefahr" id="btn-loeschen" title="Markierte Objekte löschen (Entf)">🗑</button>
+      <button class="btn" id="btn-lasso" title="Lasso: Bereich einkreisen, alle Objekte darin gemeinsam verschieben oder skalieren (L)">⭕ Lasso</button>
       <span class="trenner"></span>
       <button class="btn ikon" id="btn-undo" title="Rückgängig (Strg+Z)">↺</button>
       <button class="btn ikon" id="btn-redo" title="Wiederholen (Strg+Y)">↻</button>
@@ -62,8 +63,11 @@
         <button class="reiter-knopf aktiv" data-reiter="gewerke">Gewerke</button>
         <button class="reiter-knopf" data-reiter="aufmass">Aufmaß</button>
         <button class="reiter-knopf" data-reiter="grundriss">Grundriss</button>
+        <button class="leiste-knopf" id="btn-fixieren" title="Leiste offen halten. Ohne Fixierung klappt sie nach der Wahl einer Vorlage zu.">📌</button>
+        <button class="leiste-knopf" id="btn-zuklappen" title="Leiste einklappen">»</button>
       </div>
       <div class="vorlagen" id="vorlagen"></div>
+      <button class="leiste-auf" id="btn-aufklappen" title="Vorlagen einblenden">« Vorlagen</button>
       <div class="einstellungen" id="einstellungen" hidden></div>
     </aside>
   </main>

@@ -8,7 +8,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { GEWERKE, AUFMASS, GRUNDRISS, REGLER, FANG } from './vorlagen.js';
-import { zeichneItem, bbox, trefferTest, verschiebe, skaliere, POLSTER } from './zeichnen.js';
+import { zeichneItem, bbox, trefferTest, verschiebe, skaliere, inPolygon, POLSTER } from './zeichnen.js';
 import { speichern } from './export.js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -18,6 +18,8 @@ const dpr = Math.min(window.devicePixelRatio || 1, 2);
 /** Pixel je CSS-Pixel: bei vielen Seiten nur einfach, sonst reicht der Canvas-Speicher auf dem iPad nicht. */
 const dprAktuell = () => (state.seiten.length > 8 ? 1 : dpr);
 const SPEICHER_SCHLUESSEL = 'isotec-zeichentool-einstellungen';
+const LEISTE_SCHLUESSEL = 'isotec-zeichentool-leiste';
+const touchGeraet = window.matchMedia('(pointer: coarse)').matches;
 
 const state = {
   origBytes: null,     // Original-PDF fuer den Export
@@ -30,7 +32,9 @@ const state = {
   fest: false,         // Vorlage bleibt nach dem Zeichnen aktiv (Doppelklick auf die Vorlage)
   einstellungen: {},   // je Vorlagen-Id die angepasste Strichdicke oder Schriftgroesse
   aktiveSeite: 0,
-  auswahl: null,       // { seite, item, punkt?, ecke? }
+  auswahl: null,       // { seite, items, item (nur bei genau einem), punkt?, ecke? }
+  leisteZu: false,     // Vorlagenleiste eingeklappt
+  fixiert: !touchGeraet, // Leiste bleibt nach der Vorlagenwahl offen (auf dem iPad klappt sie zu)
   pfad: null,          // Polygon in Arbeit: { seite, item }
   linie: null,         // Gerade in Arbeit: { seite, item, start }
   verlauf: [],
@@ -46,11 +50,31 @@ const el = {
 
 const melde = (text) => { el.status.textContent = text; };
 
+/** Eine Auswahl aus einem oder mehreren Objekten einer Seite. */
+const auswahlVon = (seite, items) => ({ seite, items, item: items.length === 1 ? items[0] : null });
+
 /* ----------------------------------------------------------- Einstellungen */
 
 function ladeEinstellungen() {
   try { state.einstellungen = JSON.parse(localStorage.getItem(SPEICHER_SCHLUESSEL) || '{}'); }
   catch (e) { state.einstellungen = {}; }
+  try {
+    const l = JSON.parse(localStorage.getItem(LEISTE_SCHLUESSEL) || 'null');
+    if (l && typeof l.fixiert === 'boolean') state.fixiert = l.fixiert;
+  } catch (e) { /* Standard behalten */ }
+}
+
+function speichereLeiste() {
+  try { localStorage.setItem(LEISTE_SCHLUESSEL, JSON.stringify({ fixiert: state.fixiert })); } catch (e) { /* egal */ }
+}
+
+/** Vorlagenleiste ein- oder ausklappen. */
+function klappeLeiste(zu) {
+  state.leisteZu = zu;
+  el.leiste.classList.toggle('zu', zu);
+  document.querySelector('.buehne').classList.toggle('leiste-zu', zu);
+  if (zu) schliesseEinstellungen();
+  $('btn-fixieren').classList.toggle('aktiv', state.fixiert);
 }
 
 function speichereEinstellungen() {
@@ -109,7 +133,7 @@ function baueVorlagen(reiter) {
   const gruppen = { aufmass: [AUFMASS], grundriss: [GRUNDRISS] }[reiter] || GEWERKE;
   for (const g of gruppen) {
     const karte = document.createElement('div');
-    karte.className = 'karte';
+    karte.className = 'karte' + (g.presets.every((p) => p.nurSymbol) ? ' zeile' : '');
     if (gruppen.length > 1) {
       const kopf = document.createElement('div');
       kopf.className = 'karte-kopf';
@@ -121,10 +145,10 @@ function baueVorlagen(reiter) {
     for (const p of g.presets) {
       const v = loeseAuf(g, p);
       const knopf = document.createElement('button');
-      knopf.className = 'vorlage';
+      knopf.className = 'vorlage' + (v.nurSymbol ? ' symbol' : '');
       knopf.dataset.id = v.id;
       knopf.title = `${v.name}. Doppelklick hält die Vorlage für mehrere Objekte fest.`;
-      knopf.innerHTML = `${probe(v)}<span>${v.name}</span><span class="zahnrad${typeof state.einstellungen[v.id] === 'number' ? ' markiert' : ''}" title="${REGLER[v.einstellbar].name} anpassen">⚙</span>`;
+      knopf.innerHTML = `${probe(v)}${v.nurSymbol ? '' : `<span>${v.name}</span>`}<span class="zahnrad${typeof state.einstellungen[v.id] === 'number' ? ' markiert' : ''}" title="${REGLER[v.einstellbar].name} anpassen">⚙</span>`;
       knopf.onclick = (e) => {
         if (e.target.classList.contains('zahnrad')) { oeffneEinstellungen(v, e.target); return; }
         waehleVorlage(v);
@@ -168,7 +192,20 @@ function waehleVorlage(v) {
   state.fest = false;
   state.auswahl = null;
   markiereVorlage();
+  if (!state.fixiert) klappeLeiste(true);
   melde(`${v.gruppe} – ${v.name}. ${HINWEISE[v.frei ? 'polygonFrei' : v.tool] || ''}`);
+  zeichneAlles();
+}
+
+/** Lasso: Bereich einkreisen, alle Objekte darin werden gemeinsam markiert. */
+function waehleLasso() {
+  beendePfad(true);
+  beendeLinie(false);
+  state.tool = 'lasso';
+  state.vorlage = null;
+  state.fest = false;
+  markiereVorlage();
+  melde('Lasso: Bereich mit gedrückter Maustaste oder dem Finger einkreisen. Alle Objekte darin lassen sich dann gemeinsam verschieben, an den Ecken skalieren oder löschen.');
   zeichneAlles();
 }
 
@@ -190,12 +227,13 @@ function waehleAuswahl() {
  * direkt folgen.
  */
 function nachErstellen(seite, item) {
+  seite.letzterTipp = null;
   if (state.fest && state.vorlage) {
     zeichneAlles();
     return;
   }
   waehleAuswahl();
-  state.auswahl = { seite, item };
+  state.auswahl = auswahlVon(seite, [item]);
   zeichneAlles();
   melde(item.t === 'callout'
     ? 'Textfeld gesetzt. Feld verschieben, Pfeilspitze am runden Griff versetzen, dann Doppelklick oder Enter zum Schreiben.'
@@ -209,6 +247,7 @@ function markiereVorlage() {
     b.classList.toggle('fest', aktiv && state.fest);
   }
   $('btn-auswahl').classList.toggle('aktiv', state.tool === 'auswahl');
+  $('btn-lasso').classList.toggle('aktiv', state.tool === 'lasso');
   el.seiten.classList.toggle('zeichnen', state.tool !== 'auswahl');
   $('zoom-wert').textContent = Math.round(state.zoom * 100) + ' %';
   $('btn-undo').disabled = !state.verlauf.length;
@@ -424,7 +463,8 @@ function zeichneSeite(s) {
   if (s.entwurf) zeichneItem(ctx, s.entwurf, state.bilder, true);
   if (s.hilfen && s.hilfen.length) malHilfen(ctx, s.hilfen);
   if (state.pfad && state.pfad.seite === s) malAnker(ctx, state.pfad);
-  if (state.auswahl && state.auswahl.seite === s) malAuswahl(ctx, state.auswahl.item);
+  if (s.lasso) malLasso(ctx, s.lasso);
+  if (state.auswahl && state.auswahl.seite === s) malAuswahl(ctx, state.auswahl);
   if (!s.entwurf && s.cMini) rendereMini(s);
 }
 
@@ -452,12 +492,54 @@ function istPunktgriff(it, idx) {
   return it.t === 'poly' || it.t === 'line' || (it.t === 'callout' && idx === 4);
 }
 
-function malAuswahl(ctx, it) {
-  const b = bbox(it, ctx);
+/** Huellbox mehrerer Objekte zusammen. */
+function gruppenBox(items, ctx) {
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  for (const it of items) {
+    const b = bbox(it, ctx);
+    x1 = Math.min(x1, b.x); y1 = Math.min(y1, b.y);
+    x2 = Math.max(x2, b.x + b.w); y2 = Math.max(y2, b.y + b.h);
+  }
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
+function malLasso(ctx, pts) {
+  if (pts.length < 2) return;
+  ctx.save();
+  ctx.setLineDash([5 / state.zoom, 4 / state.zoom]);
+  ctx.lineWidth = 1.2 / state.zoom;
+  ctx.strokeStyle = '#D51317';
+  ctx.fillStyle = 'rgba(213, 19, 23, .06)';
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (const p of pts) ctx.lineTo(p[0], p[1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function malAuswahl(ctx, a) {
   ctx.save();
   ctx.setLineDash([4, 3]);
   ctx.lineWidth = 1 / state.zoom;
   ctx.strokeStyle = '#564A44';
+  if (a.items.length > 1) {
+    // Gruppe: jedes Objekt leicht gestrichelt, die gemeinsame Box mit vier Eckgriffen
+    for (const it of a.items) { const b = bbox(it, ctx); ctx.strokeRect(b.x, b.y, b.w, b.h); }
+    const g = gruppenBox(a.items, ctx);
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#D51317';
+    ctx.lineWidth = 1.4 / state.zoom;
+    ctx.strokeRect(g.x, g.y, g.w, g.h);
+    ctx.fillStyle = '#fff';
+    const q = 8 / state.zoom;
+    for (const [x, y] of ecken(g)) { ctx.fillRect(x - q / 2, y - q / 2, q, q); ctx.strokeRect(x - q / 2, y - q / 2, q, q); }
+    ctx.restore();
+    return;
+  }
+  const it = a.item;
+  const b = bbox(it, ctx);
   if (it.t !== 'line') ctx.strokeRect(b.x, b.y, b.w, b.h);
   ctx.setLineDash([]);
   ctx.fillStyle = '#fff';
@@ -651,7 +733,6 @@ function verdrahteSeite(s) {
   const finger = new Map();   // aktive Touch-Zeiger auf diesem Blatt
   let geste = null;           // Zwei-Finger-Geste: schieben und zoomen
   let pan = null;             // Ein-Finger-Schieben in der Hand auf leerer Stelle
-  let letzterTipp = null;     // fuer Doppeltipp
   let punktGesetzt = false;   // dieser Fingerdruck hat gerade einen Polygonpunkt gesetzt
 
   const mitte = () => { const [a, b] = [...finger.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) }; };
@@ -705,9 +786,12 @@ function verdrahteSeite(s) {
 
     // Doppelklick und Doppeltipp selbst erkennen (dblclick kommt nach preventDefault nicht mehr)
     const jetzt = performance.now();
-    const doppelt = letzterTipp && jetzt - letzterTipp.t < 350 && Math.hypot(e.clientX - letzterTipp.x, e.clientY - letzterTipp.y) < 24;
-    letzterTipp = { t: jetzt, x: e.clientX, y: e.clientY };
-    if (doppelt) { letzterTipp = null; doppeltipp(s); return; }
+    // Der Doppeltipp zaehlt nur, wenn der erste Tipp nichts abgeschlossen hat: wer eine
+    // Wand beendet und sofort am selben Punkt die naechste beginnt, soll nicht ausgebremst werden.
+    const lt = s.letzterTipp;
+    const doppelt = lt && jetzt - lt.t < 350 && Math.hypot(e.clientX - lt.x, e.clientY - lt.y) < 24;
+    s.letzterTipp = { t: jetzt, x: e.clientX, y: e.clientY };
+    if (doppelt) { s.letzterTipp = null; doppeltipp(s); return; }
 
     state.aktiveSeite = state.seiten.indexOf(s);
     markiereAktiveMini();
@@ -715,22 +799,40 @@ function verdrahteSeite(s) {
     punktGesetzt = false;
     const griffRadius = (e.pointerType === 'mouse' ? 9 : 16) / state.zoom;
 
+    if (state.tool === 'lasso') {
+      modus = 'lasso';
+      s.lasso = [[p.x, p.y]];
+      state.auswahl = null;
+      zeichneAlles();
+      return;
+    }
+
     if (state.tool === 'auswahl') {
-      if (state.auswahl && state.auswahl.seite === s) {
-        const it = state.auswahl.item;
-        const idx = griffe(it, c.getContext('2d')).findIndex(([x, y]) => Math.hypot(p.x - x, p.y - y) < griffRadius);
-        if (idx >= 0) {
-          schnappschuss();
-          if (istPunktgriff(it, idx)) {
-            modus = 'punkt'; state.auswahl.punkt = idx;
-          } else {
-            modus = 'skalieren'; start = p; alt = { ...bbox(it, c.getContext('2d')) }; state.auswahl.ecke = idx;
+      const a = state.auswahl;
+      if (a && a.seite === s) {
+        const ctx2 = c.getContext('2d');
+        if (a.items.length > 1) {
+          // Gruppe: Eckgriff skaliert alles, ein Griff in die Box verschiebt alles
+          const g = gruppenBox(a.items, ctx2);
+          const idx = ecken(g).findIndex(([x, y]) => Math.hypot(p.x - x, p.y - y) < griffRadius);
+          if (idx >= 0) { schnappschuss(); modus = 'skalieren'; start = p; alt = { ...g }; a.ecke = idx; return; }
+          if (p.x >= g.x && p.x <= g.x + g.w && p.y >= g.y && p.y <= g.y + g.h) { schnappschuss(); modus = 'schieben'; start = p; return; }
+        } else {
+          const it = a.item;
+          const idx = griffe(it, ctx2).findIndex(([x, y]) => Math.hypot(p.x - x, p.y - y) < griffRadius);
+          if (idx >= 0) {
+            schnappschuss();
+            if (istPunktgriff(it, idx)) {
+              modus = 'punkt'; a.punkt = idx;
+            } else {
+              modus = 'skalieren'; start = p; alt = { ...bbox(it, ctx2) }; a.ecke = idx;
+            }
+            return;
           }
-          return;
         }
       }
       const treffer = [...s.items].reverse().find((it) => trefferTest(it, p.x, p.y, c.getContext('2d')));
-      state.auswahl = treffer ? { seite: s, item: treffer } : null;
+      state.auswahl = treffer ? auswahlVon(s, [treffer]) : null;
       if (treffer) { schnappschuss(); modus = 'schieben'; start = p; }
       else if (e.pointerType === 'touch') pan = { x: e.clientX, y: e.clientY, scrollLeft: el.ansicht.scrollLeft, scrollTop: el.ansicht.scrollTop };
       zeichneAlles();
@@ -779,6 +881,11 @@ function verdrahteSeite(s) {
       return;
     }
     const p = punkt(s, e);
+    if (modus === 'lasso') {
+      s.lasso.push([p.x, p.y]);
+      zeichneSeite(s);
+      return;
+    }
     if (state.pfad && state.pfad.seite === s) {
       const f = fange(s, p, ankerFuer(s), e.shiftKey, null, state.pfad.item.frei);
       const pts = state.pfad.item.pts;
@@ -816,18 +923,19 @@ function verdrahteSeite(s) {
       s.hilfen = f.hilfen;
       zeichneSeite(s);
     } else if (modus === 'schieben') {
-      verschiebe(state.auswahl.item, p.x - start.x, p.y - start.y);
+      for (const it of state.auswahl.items) verschiebe(it, p.x - start.x, p.y - start.y);
       start = p;
       zeichneSeite(s);
     } else if (modus === 'skalieren') {
-      const it = state.auswahl.item;
-      const b = bbox(it, c.getContext('2d'));
+      // Einzeln oder als Gruppe: alle Objekte werden durch dieselbe Box-Abbildung gezogen
+      const items = state.auswahl.items;
+      const b = gruppenBox(items, c.getContext('2d'));
       const feste = ecken(alt)[3 - state.auswahl.ecke];
       const neu = {
         x: Math.min(feste[0], p.x), y: Math.min(feste[1], p.y),
         w: Math.max(2, Math.abs(p.x - feste[0])), h: Math.max(2, Math.abs(p.y - feste[1])),
       };
-      skaliere(it, b, neu);
+      for (const it of items) skaliere(it, b, neu);
       zeichneSeite(s);
     }
   });
@@ -837,6 +945,22 @@ function verdrahteSeite(s) {
     if (geste) { if (finger.size < 2) beendeGeste(); return; }
     if (pan) { pan = null; return; }
     punktGesetzt = false;
+    if (modus === 'lasso') {
+      const pfad = s.lasso;
+      s.lasso = null;
+      modus = null;
+      const ctx2 = c.getContext('2d');
+      const drin = pfad.length >= 3
+        ? s.items.filter((it) => { const b = bbox(it, ctx2); return inPolygon(b.x + b.w / 2, b.y + b.h / 2, pfad); })
+        : [];
+      waehleAuswahl();
+      state.auswahl = drin.length ? auswahlVon(s, drin) : null;
+      zeichneAlles();
+      melde(drin.length
+        ? `${drin.length} Objekt${drin.length > 1 ? 'e' : ''} markiert. Gemeinsam verschieben, an den Ecken skalieren, Entf löscht.`
+        : 'Nichts eingekreist. Lasso erneut wählen oder mit der Hand einzeln greifen.');
+      return;
+    }
     const p = punkt(s, e);
     // Eine gezogene Gerade ist mit dem Loslassen fertig, ein blosser Klick wartet auf den zweiten
     if (state.linie && state.linie.seite === s && Math.hypot(p.x - state.linie.start.x, p.y - state.linie.start.y) > 4 / state.zoom) {
@@ -1131,7 +1255,7 @@ function loescheAuswahl() {
   if (!state.auswahl) return;
   schnappschuss();
   const s = state.auswahl.seite;
-  s.items = s.items.filter((i) => i !== state.auswahl.item);
+  s.items = s.items.filter((i) => !state.auswahl.items.includes(i));
   state.auswahl = null;
   zeichneAlles();
 }
@@ -1180,6 +1304,16 @@ $('btn-leer').onclick = $('btn-leer-2').onclick = () => { leeresDokument(); meld
 $('btn-foto').onclick = fotoDialog;
 $('datei-input').onchange = (e) => { nimmDateien(e.target.files); e.target.value = ''; };
 $('btn-auswahl').onclick = waehleAuswahl;
+$('btn-lasso').onclick = waehleLasso;
+$('btn-zuklappen').onclick = () => klappeLeiste(true);
+$('btn-aufklappen').onclick = () => klappeLeiste(false);
+$('btn-fixieren').onclick = () => {
+  state.fixiert = !state.fixiert;
+  speichereLeiste();
+  klappeLeiste(false);
+  melde(state.fixiert ? 'Vorlagenleiste bleibt offen.' : 'Vorlagenleiste klappt nach der Wahl einer Vorlage zu.');
+};
+klappeLeiste(false);
 $('btn-loeschen').onclick = loescheAuswahl;
 $('btn-undo').onclick = () => stelleWieder(state.verlauf, state.zukunft);
 $('btn-redo').onclick = () => stelleWieder(state.zukunft, state.verlauf);
@@ -1232,7 +1366,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     if (state.pfad) { e.preventDefault(); beendePfad(true); return; }
     const a = state.auswahl;
-    if (state.tool === 'auswahl' && a && (a.item.t === 'text' || a.item.t === 'callout')) { e.preventDefault(); bearbeiteText(a.seite, a.item); }
+    if (state.tool === 'auswahl' && a && a.item && (a.item.t === 'text' || a.item.t === 'callout')) { e.preventDefault(); bearbeiteText(a.seite, a.item); }
     return;
   }
   if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); stelleWieder(state.verlauf, state.zukunft); return; }
@@ -1240,6 +1374,7 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); $('btn-speichern').click(); return; }
   if (e.key === 'Delete' || e.key === 'Backspace') { loescheAuswahl(); return; }
   if (!e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'v') waehleAuswahl();
+  if (!e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'l') waehleLasso();
 });
 
 // Strg + Mausrad zoomt
