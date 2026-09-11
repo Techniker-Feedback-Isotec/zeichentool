@@ -13,6 +13,18 @@ npm run dev
 
 Dann http://localhost:5183 öffnen.
 
+## Gestaltung
+
+App-Oberfläche in warmen, hellen Flächen: schwebende Werkzeugleiste mit
+Strichsymbolen (Symbolvorrat als SVG-`<symbol>` im `index.html`), Seiten- und
+Vorlagenleiste als Karten, der Zeichentisch mit feinem Punktraster. Kurze
+federnde Bewegungen: Knöpfe rasten beim Aktivieren ein, die gewählte Vorlage
+bekommt einen Ring in ihrer Gewerkefarbe, Seiten und Zeilen blenden gestaffelt
+ein, die Leiste gleitet beim Einklappen, Meldungen erscheinen als Toast unten.
+Alle Bewegungen hängen an `--bewegung` und `--feder` in `style.css` und sind
+bei `prefers-reduced-motion` abgeschaltet. Unter 1180 px Breite zeigen die
+Knöpfe nur Symbole.
+
 ## Bedienung
 
 Es gibt keine freie Werkzeugleiste. Gezeichnet wird nur mit den Vorlagen

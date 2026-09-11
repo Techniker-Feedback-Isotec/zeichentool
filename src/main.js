@@ -48,7 +48,13 @@ const el = {
   leiste: $('vorlagen-leiste'), einstellungen: $('einstellungen'),
 };
 
-const melde = (text) => { el.status.textContent = text; };
+const melde = (text) => {
+  el.status.textContent = text;
+  // Animation neu anstossen, damit jede Meldung kurz aufleuchtet
+  el.status.classList.remove('neu');
+  void el.status.offsetWidth;
+  el.status.classList.add('neu');
+};
 
 /**
  * Eine Auswahl aus einem oder mehreren Objekten einer Seite. Gehoert ein Objekt
@@ -161,6 +167,7 @@ function baueVorlagen(reiter) {
     knopf.dataset.id = v.id;
     knopf.title = `${v.gruppe}: ${v.name}. Doppelklick hält die Vorlage für mehrere Objekte fest.`;
     knopf.innerHTML = probe(v) + (breit ? `<span>${v.name}</span>` : '');
+    knopf.style.setProperty('--akzent', v.color.toLowerCase() === '#ffffff' ? '#9a938e' : v.color);
     knopf.onclick = () => waehleVorlage(v);
     const festhalten = () => {
       state.fest = true;
@@ -177,10 +184,11 @@ function baueVorlagen(reiter) {
     });
     return knopf;
   };
-  for (const g of gruppen) {
+  gruppen.forEach((g, gi) => {
     if (gruppen.length > 1) {
       const zeile = document.createElement('div');
       zeile.className = 'zeile';
+      zeile.style.setProperty('--i', gi);
       zeile.innerHTML = `<span class="fahne" style="background:${g.farbe}"></span><span class="name" title="${g.name}">${g.kurz || g.name}</span>`;
       const knoepfe = document.createElement('div');
       knoepfe.className = 'knoepfe';
@@ -188,14 +196,15 @@ function baueVorlagen(reiter) {
       zeile.appendChild(knoepfe);
       el.vorlagen.appendChild(zeile);
     } else {
-      for (const p of g.presets) {
+      g.presets.forEach((p, pi) => {
         const zeile = document.createElement('div');
         zeile.className = 'zeile liste';
+        zeile.style.setProperty('--i', pi);
         zeile.appendChild(knopfFuer(loeseAuf(g, p), true));
         el.vorlagen.appendChild(zeile);
-      }
+      });
     }
-  }
+  });
   markiereVorlage();
 }
 
@@ -283,7 +292,7 @@ function markiereVorlage() {
   const mehrere = !!a && a.items.length > 1;
   const gruppe = mehrere && a.items.every((i) => i.gruppe && i.gruppe === a.items[0].gruppe);
   $('btn-gruppe').disabled = !mehrere;
-  $('btn-gruppe').textContent = gruppe ? '⧉ Gruppe lösen' : '⧉ Gruppe';
+  $('btn-gruppe').querySelector('.label').textContent = gruppe ? 'Lösen' : 'Gruppe';
   el.seiten.classList.toggle('zeichnen', state.tool !== 'auswahl');
   $('zoom-wert').textContent = Math.round(state.zoom * 100) + ' %';
   $('btn-undo').disabled = !state.verlauf.length;
@@ -438,9 +447,10 @@ async function baueSeiten() {
   el.start.style.display = 'none';
   el.seiten.innerHTML = '';
   el.miniaturen.innerHTML = '';
-  for (const s of state.seiten) {
+  state.seiten.forEach((s, i) => {
     const blatt = document.createElement('div');
     blatt.className = 'blatt';
+    blatt.style.setProperty('--i', Math.min(i, 6));
     const cPdf = document.createElement('canvas');
     cPdf.className = 'pdf';
     const cInk = document.createElement('canvas');
@@ -462,7 +472,7 @@ async function baueSeiten() {
     mini.onclick = () => s.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     el.miniaturen.appendChild(mini);
     s.mini = mini; s.cMini = cm;
-  }
+  });
   await rendereAlleSeiten();
 }
 
